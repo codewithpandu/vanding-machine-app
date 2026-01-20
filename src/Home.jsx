@@ -1,110 +1,58 @@
 import ProductCard from "./components/Card";
-import Donut from "../src/assets/img/donut.png";
-import Milk from "../src/assets/img/milk.png";
-import Cholocate from "../src/assets/img/chocolate-bar.png";
-import Juice from "../src/assets/img/juice-box.png";
-import Orange from "../src/assets/img/orange.png";
-import Water from "../src/assets/img/water.png";
-import Coffee from "../src/assets/img/coffee-cup.png";
-import Snack from "../src/assets/img/snack.png";
 import rupiahCurrency from "./utils/Currency";
 import { useEffect, useState } from "react";
 import { MoneyButton, WhiteButton, BlueButton } from "./components/Buttons";
-
-const products = [
-  {
-    id: 1,
-    title: "Donat",
-    image: Donut,
-    stock: "5",
-    price: "10000",
-  },
-  {
-    id: 2,
-    title: "Susu",
-    image: Milk,
-    stock: "5",
-    price: "8000",
-  },
-  {
-    id: 3,
-    title: "Coklat",
-    image: Cholocate,
-    stock: "4",
-    price: "20000",
-  },
-  {
-    id: 4,
-    title: "Jus Buah",
-    image: Juice,
-    stock: "6",
-    price: "12000",
-  },
-  {
-    id: 5,
-    title: "Jeruk",
-    image: Orange,
-    stock: "9",
-    price: "10000",
-  },
-  {
-    id: 6,
-    title: "Air Mineral",
-    image: Water,
-    stock: "3",
-    price: "3000",
-  },
-  {
-    id: 7,
-    title: "Snack",
-    image: Snack,
-    stock: "3",
-    price: "7000",
-  },
-  {
-    id: 8,
-    title: "Kopi",
-    image: Coffee,
-    stock: "3",
-    price: "30000",
-  },
-];
+import { productImages } from "./utils/ProductImage";
 
 const listMoney = [5000, 10000, 20000, 50000];
 
 function App() {
-  const [product, setProduct] = useState(null);
+  const [products, setProducts] = useState([]);
   const [money, setMoney] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [status, setStatus] = useState(false);
 
   const handleMoney = (value) => {
     setMoney(money + value);
   };
-  const selectedProduct = (selectProduct) => {
-    setProduct(selectProduct);
+  const chooseProduct = (product) => {
+    setSelectedProduct(product);
+    console.log(product);
+    setStatus(false);
+    setMoney(0);
   };
 
   const handleBuy = () => {
-    if (product && money >= product.price) {
-      setMoney(money - product.price);
-      setProduct({ ...product, stock: product.stock - 1 });
-    } else {
-      alert("Uang tidak mencukupi");
+    if (selectedProduct && money >= selectedProduct.price) {
+      setStatus(true);
+
+      setMoney(money - selectedProduct.price);
+
+      setSelectedProduct({
+        ...selectedProduct,
+        stock: selectedProduct.stock - 1,
+      });
     }
   };
 
   const buyValidate = () => {
-    if (product && money >= product.price) {
+    if (selectedProduct && money >= selectedProduct.price) {
       return true;
     }
   };
 
   useEffect(() => {
-    console.log(product);
-  }, [product]);
-
-  // useEffect(() => {
-  //   console.log(money);
-  // }, [money]);
+    fetch("http://localhost:3001/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped = data.map((item) => ({
+          ...item,
+          image: productImages[item.image],
+        }));
+        console.log("API response:", data);
+        setProducts(mapped);
+      });
+  }, []);
 
   return (
     <div>
@@ -121,7 +69,7 @@ function App() {
                 image={product.image}
                 stock={product.stock}
                 price={rupiahCurrency(product.price)}
-                selectProduct={() => selectedProduct(product)}
+                selectProduct={() => chooseProduct(product)}
               />
             ))}
           </div>
@@ -131,7 +79,7 @@ function App() {
             <div className="flex flex-col items-center">
               <h2 className="py-2">Uang</h2>
               <h2 className="py-2 text-xl lg:text-2xl font-bold -mt-2">
-                {rupiahCurrency(money)}
+                {status ? rupiahCurrency(money) : rupiahCurrency(money)}
               </h2>
               <p className="mb-2 text-center">Masukkan Uang</p>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -145,18 +93,18 @@ function App() {
           </div>
           <div className="relative bg-neutral-primary-soft max-w-xs w-full p-6 border border-default rounded-base shadow-xs">
             <div className="flex flex-col items-center">
-              {!product && <h2 className="py-2 text-lg">Pilih menu</h2>}
-              {product && (
+              {!selectedProduct && <h2 className="py-2 text-lg">Pilih menu</h2>}
+              {selectedProduct && (
                 <div className="flex flex-col items-center">
                   <img
                     className="w-24 h-24 mb-6 rounded-full"
-                    src={product.image}
+                    src={selectedProduct.image}
                     alt="Bonnie image"
                   />
                   <h5 className="mb-0.5 text-xl font-semibold tracking-tight text-heading">
-                    {product.title}
+                    {selectedProduct.title}
                   </h5>
-                  <span>{rupiahCurrency(product.price)}</span>
+                  <span>{rupiahCurrency(selectedProduct.price)}</span>
                 </div>
               )}
               <div className="grid grid-cols-2 mt-4 md:mt-6 gap-4">
@@ -165,15 +113,26 @@ function App() {
                     disable={!buyValidate()}
                     onClick={() => handleBuy()}
                   >
-                    {product ? "Beli" : "Pilih menu"}
+                    {selectedProduct ? "Beli" : "Pilih menu"}{" "}
+                    {status && " lagi"}
                   </BlueButton>
                 </div>
                 <div className="col-span-2">
-                  {product && money < product.price && (
-                    <p className="text-center">Uang tidak cukup</p>
+                  {status && (
+                    <div>
+                      <p className="text-center">Terimakasih sudah membeli</p>
+                      <p className="text-center">
+                        Kembalian {rupiahCurrency(money)}
+                      </p>
+                    </div>
                   )}
                 </div>
-                <WhiteButton onClick={() => setProduct(null)}>
+                <WhiteButton
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setStatus(false);
+                  }}
+                >
                   Cancel
                 </WhiteButton>
                 <WhiteButton onClick={() => setMoney(0)}>Refund</WhiteButton>
