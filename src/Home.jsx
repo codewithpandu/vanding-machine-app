@@ -9,7 +9,7 @@ import Coffee from "../src/assets/img/coffee-cup.png";
 import Snack from "../src/assets/img/snack.png";
 import rupiahCurrency from "./utils/Currency";
 import { useEffect, useState } from "react";
-import { MoneyButtons } from "./components/Buttons";
+import { MoneyButton, WhiteButton, BlueButton } from "./components/Buttons";
 
 const products = [
   {
@@ -70,16 +70,41 @@ const products = [
   },
 ];
 
+const listMoney = [5000, 10000, 20000, 50000];
+
 function App() {
   const [product, setProduct] = useState(null);
+  const [money, setMoney] = useState(0);
 
+  const handleMoney = (value) => {
+    setMoney(money + value);
+  };
   const selectedProduct = (selectProduct) => {
     setProduct(selectProduct);
+  };
+
+  const handleBuy = () => {
+    if (product && money >= product.price) {
+      setMoney(money - product.price);
+      setProduct({ ...product, stock: product.stock - 1 });
+    } else {
+      alert("Uang tidak mencukupi");
+    }
+  };
+
+  const buyValidate = () => {
+    if (product && money >= product.price) {
+      return true;
+    }
   };
 
   useEffect(() => {
     console.log(product);
   }, [product]);
+
+  // useEffect(() => {
+  //   console.log(money);
+  // }, [money]);
 
   return (
     <div>
@@ -105,13 +130,16 @@ function App() {
           <div className="bg-neutral-primary-soft max-w-xs w-full p-6 border border-default rounded-base shadow-xs">
             <div className="flex flex-col items-center">
               <h2 className="py-2">Uang</h2>
-              <h2 className="py-2 text-2xl font-bold -mt-2">Rp.10000</h2>
-              <p className="mb-2">Masukkan Uang</p>
-              <div className="flex gap-4 flex-wrap justify-evenly">
-                <MoneyButtons>Rp.5000</MoneyButtons>
-                <MoneyButtons>Rp.10.000</MoneyButtons>
-                <MoneyButtons>Rp.20.000</MoneyButtons>
-                <MoneyButtons>Rp.50.000</MoneyButtons>
+              <h2 className="py-2 text-xl lg:text-2xl font-bold -mt-2">
+                {rupiahCurrency(money)}
+              </h2>
+              <p className="mb-2 text-center">Masukkan Uang</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {listMoney.map((money) => (
+                  <MoneyButton key={money} onClick={() => handleMoney(money)}>
+                    {rupiahCurrency(money)}
+                  </MoneyButton>
+                ))}
               </div>
             </div>
           </div>
@@ -131,19 +159,24 @@ function App() {
                   <span>{rupiahCurrency(product.price)}</span>
                 </div>
               )}
-              <div className="flex mt-4 md:mt-6 gap-4">
-                <button
-                  type="button"
-                  className="inline-flex items-center text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
-                >
+              <div className="grid grid-cols-2 mt-4 md:mt-6 gap-4">
+                <div className="col-span-2">
+                  <BlueButton
+                    disable={!buyValidate()}
+                    onClick={() => handleBuy()}
+                  >
+                    {product ? "Beli" : "Pilih menu"}
+                  </BlueButton>
+                </div>
+                <div className="col-span-2">
+                  {product && money < product.price && (
+                    <p className="text-center">Uang tidak cukup</p>
+                  )}
+                </div>
+                <WhiteButton onClick={() => setProduct(null)}>
                   Cancel
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex self-start w-auto text-body bg-neutral-secondary-medium box-border border border-default-medium hover:bg-neutral-tertiary-medium hover:text-heading focus:ring-4 focus:ring-neutral-tertiary shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
-                >
-                  Message
-                </button>
+                </WhiteButton>
+                <WhiteButton onClick={() => setMoney(0)}>Refund</WhiteButton>
               </div>
             </div>
           </div>
